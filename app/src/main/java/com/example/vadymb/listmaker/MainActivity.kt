@@ -35,24 +35,23 @@ import android.os.Bundle
 import android.support.design.widget.FloatingActionButton
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.Toolbar
 import android.text.InputType
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.EditText
+import android.widget.FrameLayout
 
-class MainActivity : AppCompatActivity(), ListSelectionRecyclerViewAdapter.ListSelectionRecyclerViewClickListener {
+class MainActivity : AppCompatActivity(), ListSelectionFragment.OnListItemFragmentInteractionListener {
 
     companion object {
         const val INTENT_LIST_KEY = "list"
-        const val LIST_DETAIL_REQUEST_CODE = 1
+        const val LIST_DETAIL_REQUEST_CODE = 123
     }
 
-    private val listDataManager: ListDataManager = ListDataManager(this)
+    private var fragmentContainer: FrameLayout? = null
 
-    private lateinit var listsRecyclerView: RecyclerView
+    private var listSelectionFragment = ListSelectionFragment.newInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,15 +60,16 @@ class MainActivity : AppCompatActivity(), ListSelectionRecyclerViewAdapter.ListS
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
 
+        fragmentContainer = findViewById(R.id.fragment_container)
+        supportFragmentManager
+                .beginTransaction()
+                .add(R.id.fragment_container, listSelectionFragment)
+                .commit()
+
         val fab = findViewById<FloatingActionButton>(R.id.fab)
         fab.setOnClickListener { _ ->
             showCreateListDialog()
         }
-
-        val lists = listDataManager.readLists()
-        listsRecyclerView = findViewById(R.id.lists_recyclerview)
-        listsRecyclerView.layoutManager = LinearLayoutManager(this)
-        listsRecyclerView.adapter = ListSelectionRecyclerViewAdapter(lists, this)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -93,15 +93,9 @@ class MainActivity : AppCompatActivity(), ListSelectionRecyclerViewAdapter.ListS
 
         if (requestCode == LIST_DETAIL_REQUEST_CODE) {
             data?.let {
-                listDataManager.saveList(data.getParcelableExtra(INTENT_LIST_KEY))
-                updateLists()
+                listSelectionFragment.saveList(data.getParcelableExtra(INTENT_LIST_KEY))
             }
         }
-    }
-
-    private fun updateLists() {
-        val lists = listDataManager.readLists()
-        listsRecyclerView.adapter = ListSelectionRecyclerViewAdapter(lists, this)
     }
 
     private fun showCreateListDialog() {
@@ -112,12 +106,8 @@ class MainActivity : AppCompatActivity(), ListSelectionRecyclerViewAdapter.ListS
                 .setTitle(R.string.name_of_list)
                 .setView(listTitleEditText)
                 .setPositiveButton(R.string.create_list, { dialog, _ ->
-
                     val list = TaskList(listTitleEditText.text.toString())
-                    listDataManager.saveList(list)
-
-                    val recyclerAdapter = listsRecyclerView.adapter as ListSelectionRecyclerViewAdapter
-                    recyclerAdapter.addList(list)
+                    listSelectionFragment.add(list)
 
                     dialog.dismiss()
                     showListDetail(list)
@@ -127,12 +117,12 @@ class MainActivity : AppCompatActivity(), ListSelectionRecyclerViewAdapter.ListS
     }
 
     private fun showListDetail(list: TaskList) {
-        val listDetailIntent = Intent(this, ListDetailActivity::class.java)
-        listDetailIntent.putExtra(INTENT_LIST_KEY, list)
+        val intent = Intent(this, ListDetailActivity::class.java)
+        intent.putExtra(INTENT_LIST_KEY, list)
         startActivityForResult(intent, LIST_DETAIL_REQUEST_CODE)
     }
 
-    override fun listItemClicked(list: TaskList) {
+    override fun onListItemClicked(list: TaskList) {
         showListDetail(list)
     }
 }
