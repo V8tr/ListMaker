@@ -28,7 +28,7 @@ class ListDetailFragment : Fragment() {
         var view = inflater.inflate(R.layout.fragment_list_detail, container, false)
 
         view?.let {
-            listItemsRecyclerView = it.findViewById<RecyclerView>(R.id.list_items_recyclerview)
+            listItemsRecyclerView = it.findViewById(R.id.list_items_recyclerview)
             listItemsRecyclerView.adapter = ListItemsRecyclerViewAdapter(list)
             listItemsRecyclerView.layoutManager = LinearLayoutManager(activity)
         }
